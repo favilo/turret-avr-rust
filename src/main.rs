@@ -163,18 +163,6 @@ fn main() -> ! {
 
     ufmt::uwriteln!(&mut serial, "Ready to receive IR signals").unwrap_infallible();
 
-    /*
-     * For examples (and inspiration), head to
-     *
-     *     https://github.com/Rahix/avr-hal/tree/main/examples
-     *
-     * NOTE: Not all examples were ported to all boards!  There is a good chance though, that code
-     * for a different board can be adapted for yours.  The Arduino Uno currently has the most
-     * examples available.
-     */
-
-    // let mut led = pins.d13.into_output();
-
     loop {
         if let Some(cmd) = fetch_message() {
             ufmt::uwriteln!(
@@ -223,7 +211,6 @@ fn main() -> ! {
         } else {
             // ufmt::uwriteln!(&mut serial, "No command").unwrap_infallible();
         }
-        // led.toggle();
         arduino_hal::delay_ms(100);
     }
 }
