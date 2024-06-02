@@ -42,7 +42,7 @@ const YAW_STOP_SPEED: c_int = 90;
 const ROLL_MOVE_SPEED: c_int = 90;
 const ROLL_STOP_SPEED: c_int = 90;
 
-const YAW_PRECISION: u16 = 150;
+const YAW_PRECISION: u16 = 75;
 const ROLL_PRECISION: u16 = 158;
 
 const PITCH_MAX: i16 = 175;

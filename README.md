@@ -1,7 +1,8 @@
 rangefinder-avr
 ===============
 
-Rust project for the _Arduino Nano New Bootloader_.
+Rust project for the [Infrared Turret](https://www.crunchlabs.com/products/ir-turret) from 
+the CrunchLabs HackPack
 
 ## Build Instructions
 1. Install prerequisites as described in the [`avr-hal` README] (`avr-gcc`, `avr-libc`, `avrdude`, [`ravedude`]).

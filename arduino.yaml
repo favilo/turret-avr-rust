@@ -8,44 +8,9 @@ arduino_libraries:
   - Wire
 external_libraries:
   - Servo
-  # - IRremote
 external_library_files:
-  # - ir_remote.cpp
 
 excluded_headers:
-  - 'IRremote.h'
-  - 'IRProtocol.h'
-  - "IRFeedbackLED.hpp"
-  - "IRProtocol.hpp"
-  - "IRReceive.h"
-  - "IRReceive.hpp"
-  - "IRSend.hpp"
-  - "IRVersion.h"
-  - "IRremoteInt.h"
-  - "LongUnion.h"
-  - "TinyIR.h"
-  - "TinyIRReceiver.hpp"
-  - "TinyIRSender.hpp"
-  - "ac_LG.h"
-  - "ac_LG.hpp"
-  - "digitalWriteFast.h"
-  - "ir_BangOlufsen.hpp"
-  - "ir_BoseWave.hpp"
-  - "ir_Denon.hpp"
-  - "ir_DistanceWidthProtocol.hpp"
-  - "ir_FAST.hpp"
-  - "ir_JVC.hpp"
-  - "ir_Kaseikyo.hpp"
-  - "ir_LG.hpp"
-  - "ir_Lego.hpp"
-  - "ir_MagiQuest.hpp"
-  - "ir_NEC.hpp"
-  - "ir_Others.hpp"
-  - "ir_Pronto.hpp"
-  - "ir_RC5_RC6.hpp"
-  - "ir_Samsung.hpp"
-  - "ir_Sony.hpp"
-  - "ir_Template.hpp"
 
 definitions:
   ARDUINO: '10807'
@@ -58,16 +23,8 @@ flags:
 bindgen_lists:
   allowlist_function: 
     - Servo.*
-    - IR.*
-    - IrReceiver.*
-    - IRrecv.*
-    - IRsend.*
   allowlist_type: 
     - Servo.*
-    - IR.*
-    - IrReceiver.*
-    - IRrecv.*
-    - IRsend.*
   blocklist_function:
     # - Print.*
     # - String.*
