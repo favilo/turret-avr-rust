@@ -1,0 +1,76 @@
+arduino_home: $HOME/.arduino15
+external_libraries_home: $HOME/Arduino/libraries
+
+core_version: 1.8.6
+avr_gcc_version: 7.3.0-atmel3.6.1-arduino7
+variant: standard
+arduino_libraries:
+  - Wire
+external_libraries:
+  - Servo
+  # - IRremote
+external_library_files:
+  # - ir_remote.cpp
+
+excluded_headers:
+  - 'IRremote.h'
+  - 'IRProtocol.h'
+  - "IRFeedbackLED.hpp"
+  - "IRProtocol.hpp"
+  - "IRReceive.h"
+  - "IRReceive.hpp"
+  - "IRSend.hpp"
+  - "IRVersion.h"
+  - "IRremoteInt.h"
+  - "LongUnion.h"
+  - "TinyIR.h"
+  - "TinyIRReceiver.hpp"
+  - "TinyIRSender.hpp"
+  - "ac_LG.h"
+  - "ac_LG.hpp"
+  - "digitalWriteFast.h"
+  - "ir_BangOlufsen.hpp"
+  - "ir_BoseWave.hpp"
+  - "ir_Denon.hpp"
+  - "ir_DistanceWidthProtocol.hpp"
+  - "ir_FAST.hpp"
+  - "ir_JVC.hpp"
+  - "ir_Kaseikyo.hpp"
+  - "ir_LG.hpp"
+  - "ir_Lego.hpp"
+  - "ir_MagiQuest.hpp"
+  - "ir_NEC.hpp"
+  - "ir_Others.hpp"
+  - "ir_Pronto.hpp"
+  - "ir_RC5_RC6.hpp"
+  - "ir_Samsung.hpp"
+  - "ir_Sony.hpp"
+  - "ir_Template.hpp"
+
+definitions:
+  ARDUINO: '10807'
+  F_CPU: '16000000L'
+  ARDUINO_AVR_NANO: '1'
+  ARDUINO_ARCH_AVR: '1'
+flags:
+  - '-mmcu=atmega328p'
+
+bindgen_lists:
+  allowlist_function: 
+    - Servo.*
+    - IR.*
+    - IrReceiver.*
+    - IRrecv.*
+    - IRsend.*
+  allowlist_type: 
+    - Servo.*
+    - IR.*
+    - IrReceiver.*
+    - IRrecv.*
+    - IRsend.*
+  blocklist_function:
+    # - Print.*
+    # - String.*
+  blocklist_type:
+    # - Print.*
+    # - String.*
