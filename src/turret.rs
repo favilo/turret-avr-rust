@@ -4,23 +4,6 @@ use arduino_hal::delay_ms;
 
 use crate::arduino::Servo;
 
-pub const LEFT: u8 = 0x8;
-pub const RIGHT: u8 = 0x5A;
-pub const UP: u8 = 0x52;
-pub const DOWN: u8 = 0x18;
-pub const OK: u8 = 0x1C;
-pub const CMD1: u8 = 0x45;
-pub const CMD2: u8 = 0x46;
-pub const CMD3: u8 = 0x47;
-pub const CMD4: u8 = 0x44;
-pub const CMD5: u8 = 0x40;
-pub const CMD6: u8 = 0x43;
-pub const CMD7: u8 = 0x7;
-pub const CMD8: u8 = 0x15;
-pub const CMD9: u8 = 0x9;
-pub const CMD0: u8 = 0x19;
-pub const STAR: u8 = 0x16;
-pub const HASHTAG: u8 = 0xD;
 
 pub const PITCH_MOVE_SPEED: c_int = 8;
 pub const YAW_MOVE_SPEED: c_int = 90;

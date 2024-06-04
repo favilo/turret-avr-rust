@@ -56,23 +56,23 @@ fn main() -> ! {
             // )
             // .unwrap_infallible();
             match cmd.cmd {
-                turret::UP => {
+                ir::UP => {
                     turret.move_up(1);
                     ufmt::uwriteln!(&mut serial, "UP").unwrap_infallible();
                 }
-                turret::DOWN => {
+                ir::DOWN => {
                     turret.move_down(1);
                     ufmt::uwriteln!(&mut serial, "DOWN").unwrap_infallible();
                 }
-                turret::LEFT => {
+                ir::LEFT => {
                     turret.move_left(1);
                     ufmt::uwriteln!(&mut serial, "LEFT").unwrap_infallible();
                 }
-                turret::RIGHT => {
+                ir::RIGHT => {
                     turret.move_right(1);
                     ufmt::uwriteln!(&mut serial, "RIGHT").unwrap_infallible();
                 }
-                turret::OK => {
+                ir::OK => {
                     if !cmd.repeat {
                         turret.fire();
                         ufmt::uwriteln!(&mut serial, "FIRE").unwrap_infallible();
@@ -80,7 +80,7 @@ fn main() -> ! {
                         ufmt::uwriteln!(&mut serial, "Too soon").unwrap_infallible();
                     }
                 }
-                turret::STAR => {
+                ir::STAR => {
                     if !cmd.repeat {
                         turret.fire_all();
                         ufmt::uwriteln!(&mut serial, "BLASTOFF").unwrap_infallible();

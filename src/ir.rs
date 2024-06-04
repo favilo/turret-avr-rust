@@ -14,6 +14,35 @@ use infrared::{
     Receiver,
 };
 
+pub const LEFT: u8 = 0x8;
+pub const RIGHT: u8 = 0x5A;
+pub const UP: u8 = 0x52;
+pub const DOWN: u8 = 0x18;
+pub const OK: u8 = 0x1C;
+#[allow(dead_code)]
+pub const CMD1: u8 = 0x45;
+#[allow(dead_code)]
+pub const CMD2: u8 = 0x46;
+#[allow(dead_code)]
+pub const CMD3: u8 = 0x47;
+#[allow(dead_code)]
+pub const CMD4: u8 = 0x44;
+#[allow(dead_code)]
+pub const CMD5: u8 = 0x40;
+#[allow(dead_code)]
+pub const CMD6: u8 = 0x43;
+#[allow(dead_code)]
+pub const CMD7: u8 = 0x7;
+#[allow(dead_code)]
+pub const CMD8: u8 = 0x15;
+#[allow(dead_code)]
+pub const CMD9: u8 = 0x9;
+#[allow(dead_code)]
+pub const CMD0: u8 = 0x19;
+pub const STAR: u8 = 0x16;
+#[allow(dead_code)]
+pub const HASHTAG: u8 = 0xD;
+
 pub(crate) static CLOCK: Clock = Clock::new();
 static mut RECEIVER: Option<Receiver<Nec, Pin<Input<Floating>, PB1>, u32, NecCommand>> = None;
 static CMD: Mutex<Cell<Option<NecCommand>>> = Mutex::new(Cell::new(None));
