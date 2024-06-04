@@ -464,6 +464,7 @@ dependencies = [
  "infrared",
  "nb 1.1.0",
  "panic-halt",
+ "paste",
  "proc-macro2",
  "serde",
  "serde_yaml",
