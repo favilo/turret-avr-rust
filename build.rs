@@ -196,7 +196,7 @@ fn configure_bindgen_for_arduino(config: &Config) -> bindgen::Builder {
         .size_t_is_usize(false)
         .use_core()
         .layout_tests(false)
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks));
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()));
 
     for include_dir in config.include_dirs() {
         builder = builder.clang_arg(format!("-I{}", include_dir.to_string_lossy()));
