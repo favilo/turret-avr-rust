@@ -11,7 +11,6 @@ use arduino_hal::{
         mode::{Floating, Input, Output},
         Pin, PinOps,
     },
-    prelude::*,
     Usart,
 };
 use avr_device::interrupt::Mutex;
@@ -64,6 +63,7 @@ where
     Pin<Input<Floating>, ECHO>: AttachHwInterrupt,
     ECHO: PinOps,
 {
+    #[allow(dead_code)]
     pub fn new<TRIGGER>(trigger: Pin<Output, TRIGGER>, echo: Pin<Input<Floating>, ECHO>) -> Self
     where
         TRIGGER: arduino_hal::port::PinOps<Dynamic = Dynamic>,
@@ -79,9 +79,10 @@ where
         }
     }
 
+    #[allow(dead_code)]
     pub fn measure_us(
         &mut self,
-        serial: &mut Usart<USART0, Pin<Input, PD0>, Pin<Output, PD1>>,
+        _serial: &mut Usart<USART0, Pin<Input, PD0>, Pin<Output, PD1>>,
         exint: &EXINT,
         timeout: Option<Duration<u32, 1, 40_000>>,
     ) -> Result<Duration<u32, 1, 40_000>, HcSr04Error> {

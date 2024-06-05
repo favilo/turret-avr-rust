@@ -8,7 +8,6 @@
 #![feature(generic_const_exprs)]
 
 use arduino_hal::{prelude::*, Pins, Usart};
-use fugit::Duration;
 use interrupt::AttachPCInterrupt;
 use panic_halt as _;
 
@@ -47,7 +46,7 @@ fn main() -> ! {
 
     ufmt::uwriteln!(&mut serial, "Ready to receive IR signals").unwrap_infallible();
 
-    let mut range_finder = hc_sr04::HcSr04::new(pins.d8.into_output(), pins.d3);
+    // let mut range_finder = hc_sr04::HcSr04::new(pins.d8.into_output(), pins.d3);
 
     let mut turret = Turret::new();
     turret.attach();
