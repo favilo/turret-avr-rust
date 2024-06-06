@@ -5,7 +5,12 @@ Rust project for the [Infrared Turret](https://www.crunchlabs.com/products/ir-tu
 the CrunchLabs HackPack
 
 ## Build Instructions
+NOTE: I've only tested this on Linux, so I've no idea what changes are needed for Windows or MacOS.
+
 1. Install prerequisites as described in the [`avr-hal` README] (`avr-gcc`, `avr-libc`, `avrdude`, [`ravedude`]).
+
+1. Using the Arduino IDE, download the `Servo` library.
+    - The code should live in `~/Arduino/libraries/Servo`
 
 2. Run `cargo build` to build the firmware.
 
