@@ -126,7 +126,7 @@ where
         STATE.store(HcSr04State::Triggered as u8, Ordering::SeqCst);
         // Attach interrupt to echo pin for the starting point
         // TODO: add static status atomic to check state
-        self.echo.attach_hw_int(&exint, ExtIntMode::Rising);
+        self.echo.attach_hw_int(exint, ExtIntMode::Rising);
 
         loop {
             let checked_duration_since = CLOCK
@@ -145,7 +145,7 @@ where
                 STATE.store(HcSr04State::Measuring as u8, Ordering::SeqCst);
 
                 // Attach interrupt to echo pin for the ending point
-                self.echo.attach_hw_int(&exint, ExtIntMode::Falling);
+                self.echo.attach_hw_int(exint, ExtIntMode::Falling);
             }
 
             let echo = avr_device::interrupt::free(|cs| ECHO_TIME.borrow(cs).get());
@@ -158,7 +158,7 @@ where
         }
 
         // Detach interrupt from echo pin
-        self.echo.detach_hw_int(&exint);
+        self.echo.detach_hw_int(exint);
         STATE.store(HcSr04State::Idle as u8, Ordering::SeqCst);
 
         let (trigger, echo) = avr_device::interrupt::free(|cs| {
@@ -174,7 +174,7 @@ where
         if echo <= trigger {
             return Err(HcSr04Error::InvalidResult);
         }
-        return Ok(Duration::<u32, 1, 40_000>::from_ticks(echo - trigger));
+        Ok(Duration::<u32, 1, 40_000>::from_ticks(echo - trigger))
     }
 
     pub fn measure_distance(&mut self, exint: &EXINT) -> Result<Length, HcSr04Error> {

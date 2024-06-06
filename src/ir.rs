@@ -44,7 +44,9 @@ pub const STAR: u8 = 0x16;
 #[allow(dead_code)]
 pub const HASHTAG: u8 = 0xD;
 
-static mut RECEIVER: Option<Receiver<Nec, Pin<Input<Floating>, PB1>, u32, NecCommand>> = None;
+type IRPin = Pin<Input<Floating>, PB1>;
+
+static mut RECEIVER: Option<Receiver<Nec, IRPin, u32, NecCommand>> = None;
 static CMD: Mutex<Cell<Option<NecCommand>>> = Mutex::new(Cell::new(None));
 
 #[avr_device::interrupt(atmega328p)]
@@ -56,14 +58,11 @@ fn PCINT0() {
     let now = CLOCK.now() >> 1;
 
     let event_instant = recv.event_instant(now).expect("Pin::Error is `Infallible`");
-    match event_instant {
-        Some(cmd) => {
-            avr_device::interrupt::free(|cs| {
-                let cmd_cell = CMD.borrow(cs);
-                cmd_cell.set(Some(cmd));
-            });
-        }
-        None => {}
+    if let Some(cmd) = event_instant {
+        avr_device::interrupt::free(|cs| {
+            let cmd_cell = CMD.borrow(cs);
+            cmd_cell.set(Some(cmd));
+        });
     }
 }
 

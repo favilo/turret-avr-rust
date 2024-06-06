@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, env, path::PathBuf};
 
 use cc::Build;
 
@@ -64,7 +64,7 @@ impl Config {
         let variant_path = self
             .core_path()
             .join("variants")
-            .join(&self.variant.as_deref().unwrap_or("standard"));
+            .join(self.variant.as_deref().unwrap_or("standard"));
         let avr_gcc_include_path = self.avr_gcc_home().join("avr").join("include");
         vec![self.arduino_core_path(), variant_path, avr_gcc_include_path]
     }
@@ -135,8 +135,7 @@ impl Config {
     fn bindgen_headers(&self) -> Vec<PathBuf> {
         self.external_libraries_path()
             .iter()
-            .map(|lib| files_in_folder(lib.to_string_lossy().as_ref(), "*.h*"))
-            .flatten()
+            .flat_map(|lib| files_in_folder(lib.to_string_lossy().as_ref(), "*.h*"))
             .filter(|file: &PathBuf| {
                 !self
                     .excluded_headers
@@ -250,9 +249,8 @@ fn generate_bindings(config: &Config) {
     let bindings = configure_bindgen_for_arduino(config)
         .generate()
         .expect("Unable to generate bindings");
-    let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("src")
-        .join("arduino.rs");
+    let project_root = PathBuf::from(env::var("OUT_DIR").unwrap())
+        .join("bindings.rs");
     bindings
         .write_to_file(project_root)
         .expect("Couldn't write bindings!");
