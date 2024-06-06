@@ -7,6 +7,12 @@ the CrunchLabs HackPack
 ## Build Instructions
 NOTE: I've only tested this on Linux, so I've no idea what changes are needed for Windows or MacOS.
 
+### Hardware Changes
+In order to get the HC-SR04 connected, you need to attach the `TRIG` pin to `D8`, and the `ECHO` pin to `D3`.
+
+Other than that, it follows the instructions in the box.
+
+### Firmware Building
 1. Install prerequisites as described in the [`avr-hal` README] (`avr-gcc`, `avr-libc`, `avrdude`, [`ravedude`]).
 
 1. Using the Arduino IDE, download the `Servo` library.
