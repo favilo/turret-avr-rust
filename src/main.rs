@@ -11,7 +11,11 @@ use arduino_hal::{prelude::*, Pins, Usart};
 use interrupt::AttachPCInterrupt;
 use panic_halt as _;
 use ufmt_float::uFmt_f32;
-use uom::si::{f32::*, length::centimeter, temperature_interval::degree_celsius};
+use uom::si::{
+    f32::*,
+    length::{centimeter, meter},
+    temperature_interval::degree_celsius,
+};
 
 #[allow(dead_code)]
 mod arduino;
@@ -113,12 +117,21 @@ fn main() -> ! {
             ufmt::uwriteln!(&mut serial, "Measuring time").unwrap_infallible();
             let distance = range_finder.measure_distance(&dp.EXINT);
             if let Ok(distance) = distance {
-                ufmt::uwriteln!(
-                    &mut serial,
-                    "Time: {} cm",
-                    uFmt_f32::Three(distance.get::<centimeter>())
-                )
-                .unwrap_infallible();
+                if distance > Length::new::<meter>(1.0) {
+                    ufmt::uwriteln!(
+                        &mut serial,
+                        "Distance: {} m",
+                        uFmt_f32::Two(distance.get::<meter>())
+                    )
+                    .unwrap_infallible();
+                } else {
+                    ufmt::uwriteln!(
+                        &mut serial,
+                        "Distance: {} cm",
+                        uFmt_f32::Two(distance.get::<centimeter>())
+                    )
+                    .unwrap_infallible();
+                }
             } else {
                 ufmt::uwriteln!(&mut serial, "Error: {:?}", distance.unwrap_err())
                     .unwrap_infallible();

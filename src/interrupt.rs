@@ -5,7 +5,8 @@ pub trait AttachPCInterrupt {
     const PIN: u8;
 
     /// Attach a pin change interrupt to the pin
-    /// INFO: see https://thewanderingengineer.com/2014/08/11/arduino-pin-change-interrupts/
+    /// INFO: see [this page](https://thewanderingengineer.com/2014/08/11/arduino-pin-change-interrupts/)
+    /// for more info
     fn attach_pc_int(&self, exint: &EXINT) {
         // Enable PORT
         exint
