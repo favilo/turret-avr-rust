@@ -9,7 +9,7 @@ NOTE: I've only tested this on Linux, so I've no idea what changes are needed fo
 
 ### Hardware Changes
 In order to get the HC-SR04 connected, you need to attach the `Trig` pin to `D8`, and the `Echo` pin to `D3`.
-And of course `Vcc` and `Gnd` go to the hot and ground lines respectively
+And of course `Vcc` and `Gnd` go to the hot and ground lines respectively.
 
 Other than that, it follows the instructions in the box.
 

@@ -65,6 +65,17 @@ pub struct HcSr04<ECHO> {
     timeout: Duration<u32, 1, 40_000>,
 }
 
+impl<ECHO> core::fmt::Debug for HcSr04<ECHO> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("HcSr04")
+            .field("trigger_time", &self.trigger_time)
+            .field("wait_time", &self.wait_time)
+            .field("speed_of_sound", &self.speed_of_sound)
+            .field("timeout", &self.timeout)
+            .finish()
+    }
+}
+
 impl<ECHO> HcSr04<ECHO>
 where
     Pin<Input<Floating>, ECHO>: AttachHwInterrupt,

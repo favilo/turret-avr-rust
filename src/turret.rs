@@ -2,18 +2,20 @@ use core::ffi::c_int;
 
 use arduino_hal::{
     delay_ms,
-    hal::port::{PD0, PD1},
+    hal::port::{PB0, PD0, PD1, PD3},
     pac::USART0,
     port::{
-        mode::{Input, Output},
+        mode::{Floating, Input, Output},
         Pin,
     },
     prelude::*,
     Usart,
 };
+use uom::si::{f32::TemperatureInterval, temperature_interval::degree_celsius};
 
 use crate::{
     arduino::Servo,
+    hc_sr04::{self, HcSr04},
     ir::{self, fetch_message},
 };
 
@@ -41,13 +43,18 @@ pub struct Turret {
     /// Keep track of the current pitch value,
     /// so we don't go too far.
     pitch_value: i16,
+
+    range_finder: HcSr04<PD3>,
 }
 
 impl Turret {
-    pub fn new() -> Self {
+    pub fn new(d8: Pin<Output, PB0>, d3: Pin<Input<Floating>, PD3>) -> Self {
         let yaw = unsafe { Servo::new() };
         let pitch = unsafe { Servo::new() };
         let roll = unsafe { Servo::new() };
+
+        let range_finder =
+            hc_sr04::HcSr04::new(TemperatureInterval::new::<degree_celsius>(23.0), d8, d3);
 
         Self {
             yaw,
@@ -55,6 +62,7 @@ impl Turret {
             roll,
 
             pitch_value: 100,
+            range_finder,
         }
     }
 
@@ -164,5 +172,9 @@ impl Turret {
                 }
             };
         }
+    }
+
+    pub fn range_finder_mut(&mut self) -> &mut HcSr04<PD3> {
+        &mut self.range_finder
     }
 }

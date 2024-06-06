@@ -14,7 +14,6 @@ use ufmt_float::uFmt_f32;
 use uom::si::{
     f32::*,
     length::{centimeter, meter},
-    temperature_interval::degree_celsius,
 };
 
 #[allow(dead_code)]
@@ -48,13 +47,7 @@ fn main() -> ! {
 
     ufmt::uwriteln!(&mut serial, "Ready to receive IR signals").unwrap_infallible();
 
-    let mut range_finder = hc_sr04::HcSr04::new(
-        TemperatureInterval::new::<degree_celsius>(23.0),
-        pins.d8.into_output(),
-        pins.d3,
-    );
-
-    let mut turret = Turret::new();
+    let mut turret = Turret::new(pins.d8.into_output(), pins.d3);
     turret.attach();
 
     let mut counter = 0;
@@ -65,7 +58,7 @@ fn main() -> ! {
         if counter % 100 == 0 {
             ufmt::uwriteln!(&mut serial, "Clock: {}", CLOCK.now()).unwrap_infallible();
             ufmt::uwriteln!(&mut serial, "Measuring time").unwrap_infallible();
-            let distance = range_finder.measure_distance(&dp.EXINT);
+            let distance = turret.range_finder_mut().measure_distance(&dp.EXINT);
             if let Ok(distance) = distance {
                 if distance > Length::new::<meter>(1.0) {
                     ufmt::uwriteln!(
