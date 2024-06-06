@@ -25,11 +25,7 @@ mod interrupt;
 mod ir;
 mod turret;
 
-use crate::{
-    clock::CLOCK,
-    ir::{fetch_message, init_receiver},
-    turret::Turret,
-};
+use crate::{clock::CLOCK, ir::init_receiver, turret::Turret};
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -64,56 +60,10 @@ fn main() -> ! {
     let mut counter = 0;
 
     loop {
-        if let Some(cmd) = fetch_message() {
-            // ufmt::uwriteln!(
-            //     &mut serial, "Command(Addr: {}, Cmd: {}, Rpt: {})",
-            //     cmd.addr,
-            //     cmd.cmd,
-            //     cmd.repeat
-            // )
-            // .unwrap_infallible();
-            match cmd.cmd {
-                ir::UP => {
-                    turret.move_up(1);
-                    ufmt::uwriteln!(&mut serial, "UP").unwrap_infallible();
-                }
-                ir::DOWN => {
-                    turret.move_down(1);
-                    ufmt::uwriteln!(&mut serial, "DOWN").unwrap_infallible();
-                }
-                ir::LEFT => {
-                    turret.move_left(1);
-                    ufmt::uwriteln!(&mut serial, "LEFT").unwrap_infallible();
-                }
-                ir::RIGHT => {
-                    turret.move_right(1);
-                    ufmt::uwriteln!(&mut serial, "RIGHT").unwrap_infallible();
-                }
-                ir::OK => {
-                    if !cmd.repeat {
-                        turret.fire();
-                        ufmt::uwriteln!(&mut serial, "FIRE").unwrap_infallible();
-                    } else {
-                        ufmt::uwriteln!(&mut serial, "Too soon").unwrap_infallible();
-                    }
-                }
-                ir::STAR => {
-                    if !cmd.repeat {
-                        turret.fire_all();
-                        ufmt::uwriteln!(&mut serial, "BLASTOFF").unwrap_infallible();
-                    }
-                }
-                _ => {
-                    ufmt::uwriteln!(&mut serial, "Unknown").unwrap_infallible();
-                }
-            };
-        } else {
-            // ufmt::uwriteln!(&mut serial, "No command").unwrap_infallible();
-        }
+        turret.handle_command(&mut serial);
 
         if counter % 100 == 0 {
             ufmt::uwriteln!(&mut serial, "Clock: {}", CLOCK.now()).unwrap_infallible();
-            // TODO: Make range finder work in the background
             ufmt::uwriteln!(&mut serial, "Measuring time").unwrap_infallible();
             let distance = range_finder.measure_distance(&dp.EXINT);
             if let Ok(distance) = distance {

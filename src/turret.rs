@@ -1,9 +1,21 @@
 use core::ffi::c_int;
 
-use arduino_hal::delay_ms;
+use arduino_hal::{
+    delay_ms,
+    hal::port::{PD0, PD1},
+    pac::USART0,
+    port::{
+        mode::{Input, Output},
+        Pin,
+    },
+    prelude::*,
+    Usart,
+};
 
-use crate::arduino::Servo;
-
+use crate::{
+    arduino::Servo,
+    ir::{self, fetch_message},
+};
 
 pub const PITCH_MOVE_SPEED: c_int = 8;
 pub const YAW_MOVE_SPEED: c_int = 90;
@@ -102,5 +114,55 @@ impl Turret {
         delay_ms(ROLL_PRECISION * 6);
         unsafe { self.roll.write(ROLL_STOP_SPEED) };
         delay_ms(5);
+    }
+
+    pub fn handle_command(
+        &mut self,
+        serial: &mut Usart<USART0, Pin<Input, PD0>, Pin<Output, PD1>>,
+    ) {
+        if let Some(cmd) = fetch_message() {
+            // ufmt::uwriteln!(
+            //     &mut serial, "Command(Addr: {}, Cmd: {}, Rpt: {})",
+            //     cmd.addr,
+            //     cmd.cmd,
+            //     cmd.repeat
+            // )
+            // .unwrap_infallible();
+            match cmd.cmd {
+                ir::UP => {
+                    self.move_up(1);
+                    ufmt::uwriteln!(serial, "UP").unwrap_infallible();
+                }
+                ir::DOWN => {
+                    self.move_down(1);
+                    ufmt::uwriteln!(serial, "DOWN").unwrap_infallible();
+                }
+                ir::LEFT => {
+                    self.move_left(1);
+                    ufmt::uwriteln!(serial, "LEFT").unwrap_infallible();
+                }
+                ir::RIGHT => {
+                    self.move_right(1);
+                    ufmt::uwriteln!(serial, "RIGHT").unwrap_infallible();
+                }
+                ir::OK => {
+                    if !cmd.repeat {
+                        self.fire();
+                        ufmt::uwriteln!(serial, "FIRE").unwrap_infallible();
+                    } else {
+                        ufmt::uwriteln!(serial, "Too soon").unwrap_infallible();
+                    }
+                }
+                ir::STAR => {
+                    if !cmd.repeat {
+                        self.fire_all();
+                        ufmt::uwriteln!(serial, "BLASTOFF").unwrap_infallible();
+                    }
+                }
+                _ => {
+                    ufmt::uwriteln!(serial, "Unknown").unwrap_infallible();
+                }
+            };
+        }
     }
 }
