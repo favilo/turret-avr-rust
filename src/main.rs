@@ -10,6 +10,8 @@
 use arduino_hal::{prelude::*, Pins, Usart};
 use interrupt::AttachPCInterrupt;
 use panic_halt as _;
+use ufmt_float::uFmt_f32;
+use uom::si::{f32::*, length::centimeter, temperature_interval::degree_celsius};
 
 #[allow(dead_code)]
 mod arduino;
@@ -46,7 +48,11 @@ fn main() -> ! {
 
     ufmt::uwriteln!(&mut serial, "Ready to receive IR signals").unwrap_infallible();
 
-    // let mut range_finder = hc_sr04::HcSr04::new(pins.d8.into_output(), pins.d3);
+    let mut range_finder = hc_sr04::HcSr04::new(
+        TemperatureInterval::new::<degree_celsius>(23.0),
+        pins.d8.into_output(),
+        pins.d3,
+    );
 
     let mut turret = Turret::new();
     turret.attach();
@@ -104,6 +110,19 @@ fn main() -> ! {
         if counter % 100 == 0 {
             ufmt::uwriteln!(&mut serial, "Clock: {}", CLOCK.now()).unwrap_infallible();
             // TODO: Make range finder work in the background
+            ufmt::uwriteln!(&mut serial, "Measuring time").unwrap_infallible();
+            let distance = range_finder.measure_distance(&dp.EXINT);
+            if let Ok(distance) = distance {
+                ufmt::uwriteln!(
+                    &mut serial,
+                    "Time: {} cm",
+                    uFmt_f32::Three(distance.get::<centimeter>())
+                )
+                .unwrap_infallible();
+            } else {
+                ufmt::uwriteln!(&mut serial, "Error: {:?}", distance.unwrap_err())
+                    .unwrap_infallible();
+            }
         }
 
         counter += 1;

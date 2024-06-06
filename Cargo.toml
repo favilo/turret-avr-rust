@@ -20,6 +20,8 @@ fugit = "0.3.7"
 avr-device = "0.5.4"
 paste = "1.0.15"
 const-assert = "1.0.1"
+uom = { version = "0.36.0", default-features = false, features = ["si", "f32"] }
+ufmt_float = "0.2.0"
 
 [dependencies.arduino-hal]
 git = "https://github.com/rahix/avr-hal"

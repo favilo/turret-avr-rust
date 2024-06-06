@@ -5,16 +5,19 @@ use core::{
 
 use arduino_hal::{
     delay_us,
-    hal::port::{Dynamic, PD0, PD1},
-    pac::{EXINT, USART0},
+    hal::port::Dynamic,
+    pac::EXINT,
     port::{
         mode::{Floating, Input, Output},
         Pin, PinOps,
     },
-    Usart,
 };
 use avr_device::interrupt::Mutex;
 use fugit::Duration;
+use uom::si::{
+    f32::*, quantities::Time, temperature_interval::degree_celsius, time::microsecond,
+    velocity::meter_per_second,
+};
 
 use crate::{
     clock::CLOCK,
@@ -56,6 +59,10 @@ pub struct HcSr04<ECHO> {
 
     trigger_time: u32,
     wait_time: u32,
+
+    speed_of_sound: Velocity,
+
+    timeout: Duration<u32, 1, 40_000>,
 }
 
 impl<ECHO> HcSr04<ECHO>
@@ -64,11 +71,21 @@ where
     ECHO: PinOps,
 {
     #[allow(dead_code)]
-    pub fn new<TRIGGER>(trigger: Pin<Output, TRIGGER>, echo: Pin<Input<Floating>, ECHO>) -> Self
+    pub fn new<TRIGGER>(
+        temperature: TemperatureInterval,
+        trigger: Pin<Output, TRIGGER>,
+        echo: Pin<Input<Floating>, ECHO>,
+    ) -> Self
     where
         TRIGGER: arduino_hal::port::PinOps<Dynamic = Dynamic>,
     {
         let trigger = trigger.downgrade();
+        let speed_of_sound = Velocity::new::<meter_per_second>(
+            331.0 + (0.606 * temperature.get::<degree_celsius>()),
+        );
+        let timeout_seconds = 4.0 / speed_of_sound.get::<meter_per_second>() * 2.0;
+        let timeout_ticks = timeout_seconds * 80_000.0;
+        let timeout = Duration::<u32, 1, 40_000>::from_ticks(timeout_ticks as u32);
 
         Self {
             trigger,
@@ -76,16 +93,14 @@ where
 
             trigger_time: 10,
             wait_time: 10,
+
+            speed_of_sound,
+            timeout,
         }
     }
 
     #[allow(dead_code)]
-    pub fn measure_us(
-        &mut self,
-        _serial: &mut Usart<USART0, Pin<Input, PD0>, Pin<Output, PD1>>,
-        exint: &EXINT,
-        timeout: Option<Duration<u32, 1, 40_000>>,
-    ) -> Result<Duration<u32, 1, 40_000>, HcSr04Error> {
+    pub fn measure_us(&mut self, exint: &EXINT) -> Result<Duration<u32, 1, 40_000>, HcSr04Error> {
         assert!(STATE.load(Ordering::SeqCst) == HcSr04State::Idle as u8);
         let start = CLOCK.now_instant();
 
@@ -118,12 +133,10 @@ where
                 .now_instant()
                 .checked_duration_since(start)
                 .expect("Should be in the future");
-            if let Some(timeout) = timeout {
-                if checked_duration_since > timeout {
-                    // Set waiting to false, because we timedout
-                    // waiting = false;
-                    break;
-                }
+            if checked_duration_since > self.timeout {
+                // Set waiting to false, because we timedout
+                // waiting = false;
+                break;
             }
             delay_us(1);
 
@@ -131,17 +144,8 @@ where
             if trigger > 0 && STATE.load(Ordering::SeqCst) == HcSr04State::Triggered as u8 {
                 STATE.store(HcSr04State::Measuring as u8, Ordering::SeqCst);
 
-                // ufmt::uwriteln!(serial, "Trigger found: {}\nSetting echo interrupt", trigger)
-                //     .unwrap_infallible();
                 // Attach interrupt to echo pin for the ending point
                 self.echo.attach_hw_int(&exint, ExtIntMode::Falling);
-            }
-            // Slow
-            if self.echo.is_high() {
-                // ufmt::uwriteln!(serial, "echo is high").unwrap_infallible();
-                let now = CLOCK.now();
-                avr_device::interrupt::free(|cs| TRIGGER_TIME.borrow(cs).set(now));
-                continue;
             }
 
             let echo = avr_device::interrupt::free(|cs| ECHO_TIME.borrow(cs).get());
@@ -149,23 +153,14 @@ where
                 && echo > 0
                 && STATE.load(Ordering::SeqCst) == HcSr04State::Measuring as u8
             {
-                // ufmt::uwriteln!(serial, "Echo found: {}", echo).unwrap_infallible();
                 break;
             }
-            // if trigger > 0 && self.echo.is_low() {
-            //     // ufmt::uwriteln!(serial, "echo is low").unwrap_infallible();
-            //     let now = CLOCK.now();
-            //     avr_device::interrupt::free(|cs| ECHO_TIME.borrow(cs).set(now));
-            //     continue;
-            // }
         }
 
-        // ufmt::uwriteln!(serial, "detach trigger").unwrap_infallible();
         // Detach interrupt from echo pin
         self.echo.detach_hw_int(&exint);
         STATE.store(HcSr04State::Idle as u8, Ordering::SeqCst);
 
-        // ufmt::uwriteln!(serial, "fetching time").unwrap_infallible();
         let (trigger, echo) = avr_device::interrupt::free(|cs| {
             (TRIGGER_TIME.borrow(cs).get(), ECHO_TIME.borrow(cs).get())
         });
@@ -180,6 +175,12 @@ where
             return Err(HcSr04Error::InvalidResult);
         }
         return Ok(Duration::<u32, 1, 40_000>::from_ticks(echo - trigger));
+    }
+
+    pub fn measure_distance(&mut self, exint: &EXINT) -> Result<Length, HcSr04Error> {
+        let duration = self.measure_us(exint)?;
+        let duration = Time::new::<microsecond>(duration.to_micros() as f32);
+        Ok(self.speed_of_sound * duration / 2.0)
     }
 }
 

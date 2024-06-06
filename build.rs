@@ -259,6 +259,7 @@ fn generate_bindings(config: &Config) {
 }
 
 fn main() {
+    println!("cargo:rustc-link-lib=m");
     println!("cargo:rerun-if-changed={}", CONFIG_FILE);
     let config_string = std::fs::read_to_string(CONFIG_FILE)
         .unwrap_or_else(|e| panic!("Unable to read {} file: {}", CONFIG_FILE, e));
