@@ -168,8 +168,10 @@ fn configure_arduino(config: &Config) -> Build {
     }
     builder
         .compiler(config.avr_gcc())
+        .pic(false)
         .flag("-Os")
         .cpp_set_stdlib(None)
+        .flag("-Wno-unused-parameter")
         .flag("-fno-exceptions")
         .flag("-ffunction-sections")
         .flag("-fdata-sections");
