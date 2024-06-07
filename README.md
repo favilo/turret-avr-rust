@@ -19,6 +19,11 @@ Other than that, it follows the instructions in the box.
 1. Using the Arduino IDE, download the `Servo` library.
     - The code should live in `~/Arduino/libraries/Servo`
 
+1. Update the git submodules
+```
+git submodule update
+```
+
 2. Run `cargo build` to build the firmware.
 
 3. Run `cargo run` to flash the firmware to a connected board.  If `ravedude`
