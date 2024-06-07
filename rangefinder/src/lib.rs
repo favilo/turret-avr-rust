@@ -13,12 +13,11 @@ use arduino_hal::{
     Usart,
 };
 
-pub use arduino_sys as arduino;
-
 pub mod clock;
 pub mod hc_sr04;
 pub mod interrupt;
 pub mod ir;
+#[cfg(feature = "servo")]
 pub mod servo;
 pub mod turret;
 

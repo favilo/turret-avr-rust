@@ -1,12 +1,12 @@
 [package]
-name = "rangefinder-avr"
+name = "rangefinder"
 version = "0.1.0"
 authors = ["favilo <kevin.oberlies@elastic.co>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [[bin]]
-name = "rangefinder-avr"
+name = "rangefinder"
 test = false
 bench = false
 
@@ -65,3 +65,7 @@ codegen-units = 1
 debug = true
 lto = true
 opt-level = "s"
+
+[features]
+default = []
+servo = []

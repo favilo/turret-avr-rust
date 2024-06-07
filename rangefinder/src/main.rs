@@ -10,9 +10,7 @@
 use arduino_hal::{prelude::*, Pins, Usart};
 use panic_halt as _;
 
-use rangefinder::{
-    clock::CLOCK, interrupt::AttachPCInterrupt, ir::init_receiver, servo, turret::Turret,
-};
+use rangefinder::{clock::CLOCK, interrupt::AttachPCInterrupt, ir::init_receiver, turret::Turret};
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -30,7 +28,9 @@ fn main() -> ! {
 
     init_receiver(pins.d9);
 
-    servo::donate_tc1(dp.TC1);
+    #[cfg(feature = "servo")]
+    rangefinder::servo::donate_tc1(dp.TC1);
+    #[cfg(feature = "servo")]
     let mut turret = Turret::builder()
         .range_finder(pins.d8.into_output(), pins.d3)
         .yaw(pins.d10.into_output())
@@ -40,6 +40,11 @@ fn main() -> ! {
         .roll(pins.d12.into_output())
         .expect("Failed to initialize roll servo")
         .build();
+
+    #[cfg(not(feature = "servo"))]
+    let mut turret = Turret::new(pins.d8.into_output(), pins.d3);
+    #[cfg(not(feature = "servo"))]
+    turret.attach();
 
     // Enable interrupts now that receiver is initialized
     unsafe { avr_device::interrupt::enable() };

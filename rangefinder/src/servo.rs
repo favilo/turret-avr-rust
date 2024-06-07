@@ -23,7 +23,7 @@ const TRIM_DURATION: i16 = 0;
 // Don't judge me, I want to be correct to the Arduino definition
 const CLOCK_CYCLES_PER_MICROSECOND: u32 = 16_000_000 / 1_000_000;
 
-static SERVOS: Mutex<RefCell<Vec<Servo_internal, MAX_SERVOS>>> =
+static SERVOS: Mutex<RefCell<Vec<ServoInternal, MAX_SERVOS>>> =
     Mutex::new(RefCell::new(Vec::new()));
 static mut TC1: Option<TC1> = None;
 static CHANNEL: Mutex<VolatileCell<i8>> = Mutex::new(VolatileCell::new(0));
@@ -34,7 +34,7 @@ pub enum ServoError {
     TooManyServos,
 }
 
-struct Servo_internal {
+struct ServoInternal {
     pin: Pin<Output>,
     ticks: VolatileCell<u16>,
     attached: bool,
@@ -65,7 +65,7 @@ impl<State> Servo<State> {
             let mut servos = SERVOS.borrow(cs).borrow_mut();
             let index = servos.len();
             servos
-                .push(Servo_internal {
+                .push(ServoInternal {
                     pin: pin.downgrade(),
                     ticks: VolatileCell::new(DEFAULT_PULSE_WIDTH),
                     attached: false,
@@ -80,7 +80,7 @@ impl<State> Servo<State> {
         })
     }
 
-    fn isTimerActive() -> bool {
+    fn is_timer_active() -> bool {
         avr_device::interrupt::free(|cs| {
             let servos = SERVOS.borrow(cs).borrow();
             servos.iter().any(|s| s.attached)
@@ -144,7 +144,7 @@ impl<State> Servo<State> {
             let servos = SERVOS.borrow(cs).borrow();
             servos[self.index].ticks.get()
         });
-        ticksToUs(ticks as u32) as u16 + TRIM_DURATION as u16
+        ticks_to_us(ticks as u32) as u16 + TRIM_DURATION as u16
     }
 }
 
@@ -157,7 +157,7 @@ impl Servo<ServoDetached> {
     pub fn attach_with_limits(self, min: i16, max: i16) -> Servo<ServoAttached> {
         let min = ((MIN_PULSE_WIDTH - min) / 4) as i16;
         let max = ((MAX_PULSE_WIDTH - max) / 4) as i16;
-        if !Self::isTimerActive() {
+        if !Self::is_timer_active() {
             // Start the timer
             Self::init_timer();
         }
@@ -184,7 +184,7 @@ impl Servo<ServoAttached> {
             servo.attached = false;
         });
 
-        if Self::isTimerActive() {
+        if Self::is_timer_active() {
             // Stop the timer
             Self::disable_timer();
         }
@@ -209,7 +209,7 @@ impl Servo<ServoAttached> {
 
         // convert to ticks after compensating for interrupt overhead - 12 Aug 2009
         let value = value - TRIM_DURATION;
-        let value = usToTicks(value as u32);
+        let value = us_to_ticks(value as u32);
 
         ufmt::uwriteln!(serial, "Writing {} us\r", value).unwrap_infallible();
 
@@ -275,10 +275,10 @@ fn TIMER1_COMPA() {
         } else {
             // finished all channels so wait for the refresh period to expire before starting over
             //   if( ((unsigned)*TCNTn) + 4 < usToTicks(REFRESH_INTERVAL) )  // allow a few ticks to ensure the next OCR1A not missed
-            if tc1.tcnt1.read().bits() as u32 + 4 > usToTicks(REFRESH_INTERVAL as u32) {
+            if tc1.tcnt1.read().bits() as u32 + 4 > us_to_ticks(REFRESH_INTERVAL as u32) {
                 //     *OCRnA = (unsigned int)usToTicks(REFRESH_INTERVAL);
                 tc1.ocr1a
-                    .write(|w| w.bits(usToTicks(REFRESH_INTERVAL as u32) as u16));
+                    .write(|w| w.bits(us_to_ticks(REFRESH_INTERVAL as u32) as u16));
             } else {
                 //     *OCRnA = *TCNTn + 4;  // at least REFRESH_INTERVAL has elapsed
                 tc1.ocr1a.write(|w| w.bits(tc1.tcnt1.read().bits() + 4));
@@ -292,11 +292,11 @@ fn TIMER1_COMPA() {
 /// Convert microseconds to timer ticks
 /// Assumes prescaler of 8
 #[inline(always)]
-fn usToTicks(us: u32) -> u32 {
+fn us_to_ticks(us: u32) -> u32 {
     (us as u32 * CLOCK_CYCLES_PER_MICROSECOND) / 8
 }
 
-fn ticksToUs(ticks: u32) -> u32 {
+fn ticks_to_us(ticks: u32) -> u32 {
     (ticks as u32 * 8) / CLOCK_CYCLES_PER_MICROSECOND
 }
 
@@ -313,6 +313,5 @@ mod tests {
     use crate::arduino::handle_interrupts;
 
     #[test]
-    fn test_timer1_compa() {
-    }
+    fn test_timer1_compa() {}
 }
