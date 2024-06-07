@@ -76,6 +76,7 @@ impl<ECHO> core::fmt::Debug for HcSr04<ECHO> {
     }
 }
 
+#[allow(dead_code)]
 impl<ECHO> HcSr04<ECHO>
 where
     Pin<Input<Floating>, ECHO>: AttachHwInterrupt,

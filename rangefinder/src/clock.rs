@@ -7,7 +7,7 @@ use arduino_hal::pac::{tc0::tccr0b::CS0_A, TC0};
 use avr_device::interrupt::Mutex;
 use const_assert::{Assert, IsTrue};
 
-pub(crate) static CLOCK: Clock<40, 8> = Clock::new();
+pub static CLOCK: Clock<40, 8> = Clock::new();
 
 const fn prescale_from_value<const PRESCALE: u32>() -> CS0_A {
     match PRESCALE {
@@ -37,17 +37,17 @@ const fn prescale_value(prescale: CS0_A) -> u32 {
 ///
 /// interrupt frequency (Hz) = (16,000,000Hz) / (prescaler * (compare match register + 1))
 /// TOP = [ 16MHz / (PRESCALER * FREQ)] - 1
-pub struct Clock<const kHz: u32, const PRESCALE: u32> {
+pub struct Clock<const KHZ: u32, const PRESCALE: u32> {
     part: AtomicU8,
     counter: Mutex<Cell<u32>>,
 }
 
-impl<const kHz: u32, const PRESCALE: u32> Clock<kHz, PRESCALE>
+impl<const KHZ: u32, const PRESCALE: u32> Clock<KHZ, PRESCALE>
 where
     // Assert, at compile time, this fits into a u8
-    Assert<{ (16_000_000 / (PRESCALE * kHz * 1_000)) - 1 < 256 }>: IsTrue,
+    Assert<{ (16_000_000 / (PRESCALE * KHZ * 1_000)) - 1 < 256 }>: IsTrue,
 {
-    pub const FREQ: u32 = kHz * 1_000;
+    pub const FREQ: u32 = KHZ * 1_000;
     const TOP: u8 = ((16_000_000 / (PRESCALE * Self::FREQ)) - 1) as u8;
 
     pub const fn new() -> Self {
@@ -74,8 +74,8 @@ where
         })
     }
 
-    pub fn now_instant(&self) -> fugit::Instant<u32, 1, { kHz * 1_000 }> {
-        fugit::Instant::<u32, 1, { kHz * 1_000 }>::from_ticks(self.now())
+    pub fn now_instant(&self) -> fugit::Instant<u32, 1, { KHZ * 1_000 }> {
+        fugit::Instant::<u32, 1, { KHZ * 1_000 }>::from_ticks(self.now())
     }
 
     pub fn tick(&self) {
