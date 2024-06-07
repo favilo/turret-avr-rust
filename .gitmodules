@@ -1,6 +1,6 @@
-[submodule "arduino-sys/Servo"]
-	path = arduino-sys/Servo
-	url = git@github.com:arduino-libraries/Servo.git
 [submodule "arduino-sys/ArduinoCore-avr"]
 	path = arduino-sys/ArduinoCore-avr
 	url = git@github.com:arduino/ArduinoCore-avr.git
+[submodule "arduino-sys/libraries/Servo"]
+	path = arduino-sys/libraries/Servo
+	url = git@github.com:arduino-libraries/Servo.git
