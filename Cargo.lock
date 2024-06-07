@@ -514,6 +514,7 @@ name = "rangefinder-avr"
 version = "0.1.0"
 dependencies = [
  "arduino-hal",
+ "arduino-sys",
  "avr-device",
  "bindgen",
  "cc",

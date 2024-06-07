@@ -13,8 +13,8 @@ use arduino_hal::{
     Usart,
 };
 
-// #[allow(dead_code)]
-// pub mod arduino;
+pub use arduino_sys as arduino;
+
 pub mod clock;
 pub mod hc_sr04;
 pub mod interrupt;
