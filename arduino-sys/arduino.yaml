@@ -23,6 +23,8 @@ flags:
 bindgen_lists:
   allowlist_function: 
     - Servo.*
+    - handle_interrupts
+    - getChannel
   allowlist_type: 
     - Servo.*
   blocklist_function:

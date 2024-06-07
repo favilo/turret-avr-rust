@@ -1,0 +1,20 @@
+[package]
+name = "arduino-sys"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[build-dependencies]
+envmnt = "0.10.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+glob = "0.3.1"
+cc = "1.0.98"
+bindgen = "0.69"
+
+# The latest releases of `proc-macro2` do not support the rust toolchain that
+# we use.  Thus, we must fix this dependency to an older version where our
+# toolchain is still supported.  See https://github.com/Rahix/avr-hal/issues/537
+[build-dependencies.proc-macro2]
+version = "=1.0.79"

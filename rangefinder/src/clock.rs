@@ -7,7 +7,7 @@ use arduino_hal::pac::{tc0::tccr0b::CS0_A, TC0};
 use avr_device::interrupt::Mutex;
 use const_assert::{Assert, IsTrue};
 
-pub(crate) static CLOCK: Clock<40, 8> = Clock::new();
+pub static CLOCK: Clock<40, 8> = Clock::new();
 
 const fn prescale_from_value<const PRESCALE: u32>() -> CS0_A {
     match PRESCALE {
