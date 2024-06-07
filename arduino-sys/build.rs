@@ -15,8 +15,8 @@ struct BindgenLists {
 #[derive(Debug, serde::Deserialize)]
 struct Config {
     pub arduino_home: String,
+    pub core_libraries_home: String,
     pub external_libraries_home: String,
-    pub core_version: String,
     pub variant: Option<String>,
     pub avr_gcc_version: String,
     pub arduino_libraries: Vec<String>,
@@ -39,10 +39,7 @@ impl Config {
     }
 
     fn core_path(&self) -> PathBuf {
-        self.arduino_package_path()
-            .join("hardware")
-            .join("avr")
-            .join(&self.core_version)
+        PathBuf::from(envmnt::expand(&self.core_libraries_home, None))
     }
 
     fn avr_gcc_home(&self) -> PathBuf {
@@ -251,8 +248,7 @@ fn generate_bindings(config: &Config) {
     let bindings = configure_bindgen_for_arduino(config)
         .generate()
         .expect("Unable to generate bindings");
-    let project_root = PathBuf::from(env::var("OUT_DIR").unwrap())
-        .join("bindings.rs");
+    let project_root = PathBuf::from(env::var("OUT_DIR").unwrap()).join("bindings.rs");
     bindings
         .write_to_file(project_root)
         .expect("Couldn't write bindings!");
