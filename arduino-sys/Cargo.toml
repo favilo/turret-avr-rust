@@ -18,3 +18,7 @@ bindgen = "0.69"
 # toolchain is still supported.  See https://github.com/Rahix/avr-hal/issues/537
 [build-dependencies.proc-macro2]
 version = "=1.0.79"
+
+[features]
+default = []
+rust_timer1_compa = []

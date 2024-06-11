@@ -159,6 +159,10 @@ fn configure_arduino(config: &Config) -> Build {
     for (key, value) in &config.definitions {
         builder.define(key, value.as_str());
     }
+    #[cfg(feature = "rust_timer1_compa")]
+    {
+        builder.define("RUST_TIMER1_COMPA", "1");
+    }
 
     for flag in &config.flags {
         builder.flag(flag);
@@ -184,6 +188,10 @@ fn configure_bindgen_for_arduino(config: &Config) -> bindgen::Builder {
     let mut builder = bindgen::Builder::default();
     for (key, value) in &config.definitions {
         builder = builder.clang_arg(format!("-D{}={}", key, value));
+    }
+    #[cfg(feature = "rust_timer1_compa")]
+    {
+        builder = builder.clang_arg("-DRUST_TIMER1_COMPA");
     }
     for flag in &config.flags {
         builder = builder.clang_arg(flag);
@@ -255,6 +263,16 @@ fn generate_bindings(config: &Config) {
 }
 
 fn main() {
+    std::process::Command::new("git")
+        .args(&[
+            "submodule",
+            "update",
+            "--init",
+            "--depth 1",
+            "--recommend-shallow",
+        ])
+        .output()
+        .expect("Failed to update submodules");
     println!("cargo:rustc-link-lib=m");
     println!("cargo:rerun-if-changed={}", CONFIG_FILE);
     let config_string = std::fs::read_to_string(CONFIG_FILE)

@@ -125,7 +125,7 @@ impl<Yaw, Pitch, Roll> Builder<Yaw, Pitch, Roll, NoRangeFinder> {
 }
 
 impl Builder<Yaw, Pitch, Roll, RangeFinder> {
-    pub fn build(self) -> Turret {
+    pub fn build(self) -> Turret<Servo<ServoAttached>> {
         Turret {
             yaw: self.yaw.0,
             pitch: self.pitch.0,

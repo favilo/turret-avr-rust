@@ -526,6 +526,7 @@ dependencies = [
  "heapless",
  "infrared",
  "nb 1.1.0",
+ "num-traits",
  "panic-halt",
  "paste",
  "proc-macro2",

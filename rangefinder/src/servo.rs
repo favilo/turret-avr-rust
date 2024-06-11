@@ -1,4 +1,7 @@
-use core::cell::RefCell;
+use core::{
+    cell::RefCell,
+    sync::atomic::{AtomicI8, Ordering},
+};
 
 use arduino_hal::{
     hal::port::Dynamic,
@@ -8,6 +11,7 @@ use arduino_hal::{
 };
 use avr_device::interrupt::Mutex;
 use heapless::Vec;
+use num_traits::PrimInt;
 use vcell::VolatileCell;
 
 use crate::Serial;
@@ -18,15 +22,14 @@ const MIN_PULSE_WIDTH: i16 = 544;
 const MAX_PULSE_WIDTH: i16 = 2400;
 const DEFAULT_PULSE_WIDTH: u16 = 1500;
 // compensation ticks to trim adjust for digitalWrite delays // 12 August 2009
-const TRIM_DURATION: i16 = 0;
+const TRIM_DURATION: i16 = 1;
 
 // Don't judge me, I want to be correct to the Arduino definition
 const CLOCK_CYCLES_PER_MICROSECOND: u32 = 16_000_000 / 1_000_000;
 
-static SERVOS: Mutex<RefCell<Vec<ServoInternal, MAX_SERVOS>>> =
-    Mutex::new(RefCell::new(Vec::new()));
+static mut SERVOS: Vec<ServoInternal, MAX_SERVOS> = Vec::new();
 static mut TC1: Option<TC1> = None;
-static CHANNEL: Mutex<VolatileCell<i8>> = Mutex::new(VolatileCell::new(0));
+static CHANNEL: AtomicI8 = AtomicI8::new(0);
 
 #[derive(Debug)]
 pub enum ServoError {
@@ -61,16 +64,17 @@ impl<State> Servo<State> {
         if unsafe { TC1.is_none() } {
             return Err(ServoError::NotInitialized);
         }
-        avr_device::interrupt::free(|cs| {
-            let mut servos = SERVOS.borrow(cs).borrow_mut();
-            let index = servos.len();
-            servos
-                .push(ServoInternal {
-                    pin: pin.downgrade(),
-                    ticks: VolatileCell::new(DEFAULT_PULSE_WIDTH),
-                    attached: false,
-                })
-                .map_err(|_| ServoError::TooManyServos)?;
+        avr_device::interrupt::free(|_| {
+            let index = unsafe { SERVOS.len() };
+            unsafe {
+                SERVOS
+                    .push(ServoInternal {
+                        pin: pin.downgrade(),
+                        ticks: VolatileCell::new(DEFAULT_PULSE_WIDTH),
+                        attached: false,
+                    })
+                    .map_err(|_| ServoError::TooManyServos)?
+            };
             Ok(Servo {
                 index,
                 min: 0,
@@ -81,10 +85,7 @@ impl<State> Servo<State> {
     }
 
     fn is_timer_active() -> bool {
-        avr_device::interrupt::free(|cs| {
-            let servos = SERVOS.borrow(cs).borrow();
-            servos.iter().any(|s| s.attached)
-        })
+        avr_device::interrupt::free(|_| unsafe { SERVOS.iter().any(|s| s.attached) })
     }
 
     /// Copied from
@@ -121,10 +122,7 @@ impl<State> Servo<State> {
 
     #[allow(dead_code)]
     fn is_attached(&self) -> bool {
-        avr_device::interrupt::free(|cs| {
-            let servos = SERVOS.borrow(cs).borrow();
-            servos[self.index].attached
-        })
+        avr_device::interrupt::free(|_| unsafe { SERVOS[self.index].attached })
     }
 
     #[allow(dead_code)]
@@ -140,10 +138,7 @@ impl<State> Servo<State> {
 
     #[allow(dead_code)]
     fn read_us(&self) -> u16 {
-        let ticks = avr_device::interrupt::free(|cs| {
-            let servos = SERVOS.borrow(cs).borrow();
-            servos[self.index].ticks.get()
-        });
+        let ticks = avr_device::interrupt::free(|_| unsafe { SERVOS[self.index].ticks.get() });
         ticks_to_us(ticks as u32) as u16 + TRIM_DURATION as u16
     }
 }
@@ -161,10 +156,8 @@ impl Servo<ServoDetached> {
             // Start the timer
             Self::init_timer();
         }
-        avr_device::interrupt::free(|cs| {
-            let mut servos = SERVOS.borrow(cs).borrow_mut();
-            let servo = &mut servos[self.index];
-            servo.attached = true;
+        avr_device::interrupt::free(|_| {
+            unsafe { SERVOS[self.index].attached = true };
         });
         Servo {
             index: self.index,
@@ -178,10 +171,8 @@ impl Servo<ServoDetached> {
 impl Servo<ServoAttached> {
     #[allow(dead_code)]
     pub fn detach(self) -> Servo<ServoDetached> {
-        avr_device::interrupt::free(|cs| {
-            let mut servos = SERVOS.borrow(cs).borrow_mut();
-            let servo = &mut servos[self.index];
-            servo.attached = false;
+        avr_device::interrupt::free(|_| {
+            unsafe { SERVOS[self.index].attached = false };
         });
 
         if Self::is_timer_active() {
@@ -197,7 +188,7 @@ impl Servo<ServoAttached> {
     }
 
     pub fn write(&self, value: u8, serial: &mut Serial) {
-        ufmt::uwriteln!(serial, "Writing {} in range\r", value).unwrap_infallible();
+        // ufmt::uwriteln!(serial, "Writing {} in range\r", value).unwrap_infallible();
         let value = value.clamp(0, 180);
         let value = map(value as i16, 0, 180, self.servo_min(), self.servo_max());
         self.write_us(value, serial);
@@ -209,14 +200,13 @@ impl Servo<ServoAttached> {
 
         // convert to ticks after compensating for interrupt overhead - 12 Aug 2009
         let value = value - TRIM_DURATION;
-        let value = us_to_ticks(value as u32);
+        let value = us_to_ticks(value);
 
-        ufmt::uwriteln!(serial, "Writing {} us\r", value).unwrap_infallible();
+        // ufmt::uwriteln!(serial, "Writing {} us\r", value).unwrap_infallible();
 
-        avr_device::interrupt::free(|cs| {
-            let mut servos = SERVOS.borrow(cs).borrow_mut();
+        avr_device::interrupt::free(|_| {
             // This can't panic because the servo was successfully constructed
-            let servo = &mut servos[self.index];
+            let servo = unsafe { &mut SERVOS[self.index] };
             servo.ticks.set(value as u16);
         });
     }
@@ -233,67 +223,56 @@ pub fn donate_tc1(tc1: TC1) {
 
 /// Copied from
 /// [Servo.h](https://github.com/arduino-libraries/Servo/blob/85e8cdd3b1dc26402b3529f86955830b47e19df6/src/avr/Servo.cpp#L52-L75)
+#[cfg(feature = "rust_timer1_compa")]
 #[avr_device::interrupt(atmega328p)]
 fn TIMER1_COMPA() {
     let tc1 = unsafe { TC1.as_ref().unwrap() };
-    avr_device::interrupt::free(|cs| {
-        let channel = CHANNEL.borrow(cs);
-        // if( Channel[timer] < 0 )
-        if channel.get() < 0 {
-            //   *TCNTn = 0; // channel set to -1 indicated that refresh interval completed so reset the timer
-            unsafe { tc1.tcnt1.write_with_zero(|w| w.bits(0)) };
-        } else {
-            //   if( SERVO_INDEX(timer,Channel[timer]) < ServoCount && SERVO(timer,Channel[timer]).Pin.isActive == true )
-            if let Some(servo) = SERVOS
-                .borrow(cs)
-                .borrow_mut()
-                .get_mut(channel.get() as usize)
-            {
-                if servo.attached {
-                    //     digitalWrite( SERVO(timer,Channel[timer]).Pin.nbr,LOW); // pulse this channel low if activated
-                    servo.pin.set_low();
-                }
-            }
-        }
-        // Channel[timer]++;    // increment to the next channel
-        channel.set(channel.get() + 1);
-
-        // if( SERVO_INDEX(timer,Channel[timer]) < ServoCount && Channel[timer] < SERVOS_PER_TIMER) {
-        if let Some(servo) = SERVOS
-            .borrow(cs)
-            .borrow_mut()
-            .get_mut(channel.get() as usize)
-        {
-            //   *OCRnA = *TCNTn + SERVO(timer,Channel[timer]).ticks;
-            tc1.ocr1a
-                .write(|w| w.bits(tc1.tcnt1.read().bits() + servo.ticks.get()));
-            //   if(SERVO(timer,Channel[timer]).Pin.isActive == true)     // check if activated
+    // if( Channel[timer] < 0 )
+    if CHANNEL.load(Ordering::SeqCst) < 0 {
+        //   *TCNTn = 0; // channel set to -1 indicated that refresh interval completed so reset the timer
+        tc1.tcnt1.write(|w| w.bits(0));
+    } else {
+        //   if( SERVO_INDEX(timer,Channel[timer]) < ServoCount && SERVO(timer,Channel[timer]).Pin.isActive == true )
+        if let Some(servo) = unsafe { SERVOS.get_mut(CHANNEL.load(Ordering::SeqCst) as usize) } {
             if servo.attached {
-                //     digitalWrite( SERVO(timer,Channel[timer]).Pin.nbr,HIGH); // its an active channel so pulse it high
-                servo.pin.set_high();
+                //     digitalWrite( SERVO(timer,Channel[timer]).Pin.nbr,LOW); // pulse this channel low if activated
+                servo.pin.set_low();
             }
-        } else {
-            // finished all channels so wait for the refresh period to expire before starting over
-            //   if( ((unsigned)*TCNTn) + 4 < usToTicks(REFRESH_INTERVAL) )  // allow a few ticks to ensure the next OCR1A not missed
-            if tc1.tcnt1.read().bits() as u32 + 4 > us_to_ticks(REFRESH_INTERVAL as u32) {
-                //     *OCRnA = (unsigned int)usToTicks(REFRESH_INTERVAL);
-                tc1.ocr1a
-                    .write(|w| w.bits(us_to_ticks(REFRESH_INTERVAL as u32) as u16));
-            } else {
-                //     *OCRnA = *TCNTn + 4;  // at least REFRESH_INTERVAL has elapsed
-                tc1.ocr1a.write(|w| w.bits(tc1.tcnt1.read().bits() + 4));
-            }
-            //   Channel[timer] = -1; // this will get incremented at the end of the refresh period to start again at the first channel
-            channel.set(-1);
         }
-    });
+    }
+    // Channel[timer]++;    // increment to the next channel
+    CHANNEL.store(CHANNEL.load(Ordering::SeqCst), Ordering::SeqCst);
+
+    // if( SERVO_INDEX(timer,Channel[timer]) < ServoCount && Channel[timer] < SERVOS_PER_TIMER) {
+    if let Some(servo) = unsafe { SERVOS.get_mut(CHANNEL.load(Ordering::SeqCst) as usize) } {
+        //   *OCRnA = *TCNTn + SERVO(timer,Channel[timer]).ticks;
+        tc1.ocr1a
+            .write(|w| w.bits(tc1.tcnt1.read().bits() + servo.ticks.get()));
+        //   if(SERVO(timer,Channel[timer]).Pin.isActive == true)     // check if activated
+        if servo.attached {
+            //     digitalWrite( SERVO(timer,Channel[timer]).Pin.nbr,HIGH); // its an active channel so pulse it high
+            servo.pin.set_high();
+        }
+    } else {
+        // finished all channels so wait for the refresh period to expire before starting over
+        //   if( ((unsigned)*TCNTn) + 4 < usToTicks(REFRESH_INTERVAL) )  // allow a few ticks to ensure the next OCR1A not missed
+        if tc1.tcnt1.read().bits() + 4 > us_to_ticks(REFRESH_INTERVAL) {
+            //     *OCRnA = (unsigned int)usToTicks(REFRESH_INTERVAL);
+            tc1.ocr1a.write(|w| w.bits(us_to_ticks(REFRESH_INTERVAL)));
+        } else {
+            //     *OCRnA = *TCNTn + 4;  // at least REFRESH_INTERVAL has elapsed
+            tc1.ocr1a.write(|w| w.bits(tc1.tcnt1.read().bits() + 4));
+        }
+        //   Channel[timer] = -1; // this will get incremented at the end of the refresh period to start again at the first channel
+        CHANNEL.store(-1, Ordering::SeqCst);
+    }
 }
 
 /// Convert microseconds to timer ticks
 /// Assumes prescaler of 8
 #[inline(always)]
-fn us_to_ticks(us: u32) -> u32 {
-    (us as u32 * CLOCK_CYCLES_PER_MICROSECOND) / 8
+fn us_to_ticks<N: PrimInt>(us: N) -> N {
+    (us * N::from(CLOCK_CYCLES_PER_MICROSECOND).unwrap()) / N::from(8).unwrap()
 }
 
 fn ticks_to_us(ticks: u32) -> u32 {
