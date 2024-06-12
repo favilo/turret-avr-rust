@@ -3,4 +3,4 @@
 	url = git@github.com:arduino/ArduinoCore-avr.git
 [submodule "arduino-sys/libraries/Servo"]
 	path = arduino-sys/libraries/Servo
-	url = git@github.com:arduino-libraries/Servo.git
+	url = git@github.com:favilo/Servo.git
