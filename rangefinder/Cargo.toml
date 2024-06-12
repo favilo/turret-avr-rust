@@ -55,6 +55,6 @@ bindgen = "0.69"
 version = "=1.0.79"
 
 [features]
-default = []
+default = ["rust_timer1_compa"]
 servo = []
 rust_timer1_compa = ["arduino-sys/rust_timer1_compa"]

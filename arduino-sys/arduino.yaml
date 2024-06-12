@@ -22,10 +22,12 @@ flags:
 bindgen_lists:
   allowlist_function: 
     - Servo.*
-    - handle_interrupts
-    - getChannel
+    - __get.*
+    - __inc_servoCount
+    - digitalWrite
   allowlist_type: 
     - Servo.*
+    - servo.*
   blocklist_function:
     # - Print.*
     # - String.*

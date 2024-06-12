@@ -210,6 +210,12 @@ fn configure_bindgen_for_arduino(config: &Config) -> bindgen::Builder {
     for header in dbg!(config.bindgen_headers()) {
         builder = builder.header(header.to_string_lossy());
     }
+    builder = builder.header(
+        config
+            .arduino_core_path()
+            .join("Arduino.h")
+            .to_string_lossy(),
+    );
 
     for item in &config.bindgen_lists.allowlist_function {
         builder = builder.allowlist_function(item);
